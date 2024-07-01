@@ -6,11 +6,7 @@ import bcryptjs from "bcryptjs";
 import dbConnection from "@/db/dbConnect";
 import User from "@/models/user.model";
 import { env } from "./env";
-import NextAuth, {
-  AuthError,
-  CredentialsSignin,
-  User as authUser,
-} from "next-auth";
+import NextAuth, { AuthError, User as authUser } from "next-auth";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -94,6 +90,70 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = user.role;
       }
       return token;
+    },
+    signIn: async ({ user, account }) => {
+      if (account?.provider === "google") {
+        try {
+          const { email, name, image, id } = user;
+          await dbConnection();
+          const isUserAlreadyExist = await User.findOne({ email: email });
+          if (!isUserAlreadyExist) {
+            await User.create({
+              firstname: name,
+              email: email,
+              image: image,
+              authProviderId: id,
+            });
+          } else {
+            return true;
+          }
+        } catch (error) {
+          throw new Error("seomething went wrong");
+        }
+      }
+      if (account?.provider === "github") {
+        try {
+          const { email, name, image, id } = user;
+          await dbConnection();
+          const isUserAlreadyExist = await User.findOne({ email: email });
+          if (!isUserAlreadyExist) {
+            await User.create({
+              firstname: name,
+              email: email,
+              image: image,
+              authProviderId: id,
+            });
+          } else {
+            return true;
+          }
+        } catch (error) {
+          throw new Error("seomething went wrong");
+        }
+      }
+      if (account?.provider === "facebook") {
+        try {
+          const { email, name, image, id } = user;
+          await dbConnection();
+          const isUserAlreadyExist = await User.findOne({ email: email });
+          if (!isUserAlreadyExist) {
+            await User.create({
+              firstname: name,
+              email: email,
+              image: image,
+              authProviderId: id,
+            });
+          } else {
+            return true;
+          }
+        } catch (error) {
+          throw new Error("seomething went wrong");
+        }
+      }
+      if (account?.provider === "Credentials") {
+        return true;
+      } else {
+        return false;
+      }
     },
   },
   secret: env.AUTH_SECRET,
