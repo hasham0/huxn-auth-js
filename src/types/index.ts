@@ -9,6 +9,11 @@ interface UserSchemaTS extends Document {
   image: string;
   authProviderId: string;
 }
+
+// interface UserDocs extends Document, UserSchemaTS {
+//   isPasswordCorrect(password: string): Promise<boolean>;
+// }
+
 type UserCred = {
   firstname: string;
   lastname: string;

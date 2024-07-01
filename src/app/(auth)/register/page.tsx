@@ -1,4 +1,3 @@
-// import { register } from "@/action/user";
 import {
   facebookSignInFunc,
   githubSignInFunc,

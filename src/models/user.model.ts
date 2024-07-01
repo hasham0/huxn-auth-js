@@ -27,13 +27,13 @@ const UserSchema = new Schema<UserSchemaTS>(
     },
     password: {
       type: String,
-      required: [true, "password is required"],
       select: false,
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
+      select: false,
     },
     image: {
       type: String,

@@ -3,46 +3,48 @@ import bcryptjs from "bcryptjs";
 import User from "@/models/user.model";
 import { redirect } from "next/navigation";
 import dbConnection from "@/db/dbConnect";
-import { signIn } from "@/lib/auth";
+import { signIn } from "next-auth/react";
 
 // note: Register funtion:
 const registerFunc = async (formData: FormData) => {
-  const firstname = formData.get("firstname") as string | undefined;
-  const lastname = formData.get("lastname") as string | undefined;
-  const email = formData.get("email") as string | undefined;
-  const password = formData.get("password") as string | undefined;
+  try {
+    const firstname = formData.get("firstname") as string | undefined;
+    const lastname = formData.get("lastname") as string | undefined;
+    const email = formData.get("email") as string | undefined;
+    const password = formData.get("password") as string | undefined;
 
-  // check fields if any one is empty
-  if (
-    [firstname, lastname, email, password].some((item) => item?.trim() === "")
-  ) {
-    throw new Error("please fill all the fields");
+    // Check if any field is empty
+    if ([firstname, lastname, email, password].some((item) => !item?.trim())) {
+      throw new Error("Please fill all the fields");
+    }
+
+    // Connect to the database
+    await dbConnection();
+
+    // Check if user already exists
+    const isUserExist = await User.findOne({ email });
+    if (isUserExist) {
+      throw new Error("User already exists");
+    }
+
+    // Hash password
+    const hashedPassword = await bcryptjs.hash(password as string, 12);
+
+    // Create new user
+    const newUser = await User.create({
+      firstname,
+      lastname,
+      email,
+      password: hashedPassword,
+    });
+    console.log("user created successfully");
+    // Redirect to login page
+  } catch (error) {
+    console.error(error);
+    // Optionally, you could re-throw the error or handle it accordingly
   }
-
-  // connect database
-  await dbConnection();
-
-  // check existing user
-  const isUserExist = await User.findOne({ email });
-  if (isUserExist) {
-    throw new Error("user already exist");
-  }
-
-  // hashed password
-  const hashedPassword = await bcryptjs.hash(password as string, 12);
-
-  // create new user
-  const user = await User.create({
-    firstname,
-    lastname,
-    email,
-    password: hashedPassword,
-  });
-
-  // redirect to login page
   redirect("/login");
 };
-
 // note: Login funtion:
 const loginFunc = async (formData: FormData) => {
   const email = formData.get("email") as string | undefined;
@@ -52,26 +54,17 @@ const loginFunc = async (formData: FormData) => {
   if ([email, password].some((item) => item?.trim() === "")) {
     throw new Error("please fill all the fields");
   }
-
-  // connect database
-  await dbConnection();
-
-  // check existing user
-  const isUserExist = await User.findOne({ email }).select("+password");
-  if (!isUserExist) {
-    throw new Error("invalid email or  password");
+  try {
+    await signIn("credentials", {
+      redirect: false,
+      callbackUrl: "/",
+      email,
+      password,
+    });
+    // redirect to home page
+  } catch (error) {
+    console.log(error);
   }
-
-  // compare password
-  const hashedPassword = await bcryptjs.compare(
-    password as string,
-    isUserExist.password
-  );
-  if (!hashedPassword) {
-    throw new Error("invalid email or  password");
-  }
-
-  // redirect to home page
   redirect("/");
 };
 
