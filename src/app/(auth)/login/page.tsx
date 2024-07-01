@@ -13,17 +13,25 @@ import {
   loginFunc,
 } from "@/actions/user";
 import { Button } from "@/components/ui/button";
-// import { getSession } from "@/lib/getSession";
+import getSession from "@/lib/get-session";
+import { redirect } from "next/navigation";
 type Props = {};
 
-export default function Login({}: Props) {
-  // const session = await getSession();
-  // const user = session?.user;
-  // if (user) redirect("/");
+export default async function Login({}: Props) {
+  const session = await getSession();
+  const user = session?.user;
+  if (user) redirect("/");
   return (
     <>
       <div className="mt-10 max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white border border-[#121212]  dark:bg-black">
-        <form className="my-8" action={loginFunc}>
+        <form
+          className="my-8"
+          action={async (formData: FormData) => {
+            "use server";
+            const data = await loginFunc(formData);
+            console.log("🚀 ~ action={ ~ data:", data);
+          }}
+        >
           <Label htmlFor="email">Email Address</Label>
           <Input
             id="email"

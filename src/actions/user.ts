@@ -3,7 +3,8 @@ import bcryptjs from "bcryptjs";
 import User from "@/models/user.model";
 import { redirect } from "next/navigation";
 import dbConnection from "@/db/dbConnect";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth";
+import { CredentialsSignin, User as AuthUser } from "next-auth";
 
 // note: Register funtion:
 const registerFunc = async (formData: FormData) => {
@@ -40,32 +41,42 @@ const registerFunc = async (formData: FormData) => {
     console.log("user created successfully");
     // Redirect to login page
   } catch (error) {
-    console.error(error);
-    // Optionally, you could re-throw the error or handle it accordingly
+    const err = error as CredentialsSignin;
+    return err.cause;
   }
   redirect("/login");
 };
 // note: Login funtion:
 const loginFunc = async (formData: FormData) => {
-  const email = formData.get("email") as string | undefined;
-  const password = formData.get("password") as string | undefined;
-
-  // check fields if any one is empty
-  if ([email, password].some((item) => item?.trim() === "")) {
-    throw new Error("please fill all the fields");
-  }
   try {
+    const email = formData.get("email") as string | undefined;
+    const password = formData.get("password") as string | undefined;
+
+    // check fields if any one is empty
+    if ([email, password].some((item) => item?.trim() === "")) {
+      throw new Error("please fill all the fields");
+    }
     await signIn("credentials", {
       redirect: false,
       callbackUrl: "/",
-      email,
-      password,
+      email: email,
+      password: password,
     });
-    // redirect to home page
   } catch (error) {
-    console.log(error);
+    const err = error as CredentialsSignin;
+    return err.message;
   }
   redirect("/");
+};
+// note: Get all User funtion:
+const fetchAllUSer = async () => {
+  const users = await User.find({});
+  console.log("🚀 ~ fetchAllUSer ~ users:", users);
+
+  if (!users) {
+    throw new Error("users not found");
+  }
+  return users;
 };
 
 // note: Google signIn funtion:
@@ -89,4 +100,5 @@ export {
   githubSignInFunc,
   googleSignInFunc,
   facebookSignInFunc,
+  fetchAllUSer,
 };

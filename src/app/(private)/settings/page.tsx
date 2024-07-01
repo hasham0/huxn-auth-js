@@ -1,17 +1,18 @@
-// import { fetchAllUsers } from "@/action/user";
-// import { getSession } from "@/lib/getSession";
-// import { User } from "@/models/User";
+import { fetchAllUSer } from "@/actions/user";
+import getSession from "@/lib/get-session";
+import User from "@/models/user.model";
+import { User as AuthUser } from "next-auth";
 import { redirect } from "next/navigation";
 type Props = {};
 
-export default function Settings({}: Props) {
-  // const session = await getSession();
-  // const user = session?.user;
-  // if (!user) return redirect("/login");
+export default async function Settings({}: Props) {
+  const session = await getSession();
+  const user = session?.user;
+  if (!user) return redirect("/login");
 
-  // if (user?.role !== "admin") return redirect("/private/dashboard");
+  if (user?.role !== "admin") return redirect("/private/dashboard");
 
-  // const allUsers = await fetchAllUsers();
+  const allUsers: any = await fetchAllUSer();
   return (
     <>
       <div className="container mx-auto p-4">
@@ -26,24 +27,27 @@ export default function Settings({}: Props) {
           </thead>
 
           <tbody>
-            {/* {allUsers?.map((user) => (
+            {allUsers?.map((user: AuthUser) => (
               <tr key={user._id}>
-                <td className="p-2">{user.firstName}</td>
-                <td className="p-2">{user.lastName}</td>
+                <td className="p-2">{user?.firstname}</td>
+                <td className="p-2">{user?.lastname}</td>
                 <td className="p-2">
                   <form
                     action={async () => {
                       "use server";
-                      await User.findByIdAndDelete(user._id);
+                      await User?.findByIdAndDelete(user._id);
                     }}
                   >
-                    <button className="px-2 py-1 text-red-500 hover:bg-red-100 rounded focus:outline-none">
+                    <button
+                      disabled={user.role === "admin" && false}
+                      className="px-2 py-1 text-red-500 hover:bg-red-100 rounded focus:outline-none"
+                    >
                       Delete
                     </button>
                   </form>
                 </td>
               </tr>
-            ))} */}
+            ))}
           </tbody>
         </table>
       </div>

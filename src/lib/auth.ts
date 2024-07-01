@@ -6,7 +6,11 @@ import bcryptjs from "bcryptjs";
 import dbConnection from "@/db/dbConnect";
 import User from "@/models/user.model";
 import { env } from "./env";
-import NextAuth from "next-auth";
+import NextAuth, {
+  AuthError,
+  CredentialsSignin,
+  User as authUser,
+} from "next-auth";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -23,43 +27,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: env.NEXT_PUBLIC_FACEBOOK_CLIENT_SECRET,
     }),
     Credentials({
-      name: "Credentials",
+      name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials) => {
-        const email = credentials?.email;
-        const password = credentials?.password;
+      authorize: async (credentials): Promise<authUser> => {
+        try {
+          const email = credentials?.email;
+          const password = credentials?.password;
 
-        if (!email || !password) {
-          throw new Error("Please provide both email and password");
+          if (!email || !password) {
+            throw new Error("please provide both email and password");
+          }
+
+          await dbConnection();
+
+          const user = await User.findOne({ email }).select("+password +role");
+
+          if (!user || !user.password) {
+            throw new Error("Invalid email or password");
+          }
+
+          const isPasswordMatch = await bcryptjs.compare(
+            password as string,
+            user.password
+          );
+
+          if (!isPasswordMatch) {
+            throw new Error("Invalid email or password");
+          }
+          return {
+            _id: user._id as string,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          const err = (error as { message: string }).message;
+          throw new AuthError(err, {});
         }
-
-        await dbConnection();
-
-        const user = await User.findOne({ email }).select("+password +role");
-
-        if (!user || !user.password) {
-          throw new Error("Invalid email or password");
-        }
-
-        const isPasswordMatch = await bcryptjs.compare(
-          password as string,
-          user.password
-        );
-
-        if (!isPasswordMatch) {
-          throw new Error("Invalid email or password");
-        }
-
-        return {
-          _id: user._id as string,
-          firstname: user.firstname,
-          lastname: user.lastname,
-          email: user.email,
-          role: user.role,
-        };
       },
     }),
   ],
